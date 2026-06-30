@@ -987,6 +987,322 @@ dceece590f3284c3866305eb2473d099
 ```
 
 ---
+# Web Enumeration
+
+## Goal
+
+Collect as much information as possible about a web application before attempting exploitation.
+
+> Enumeration comes before Exploitation.
+
+---
+
+# Web Enumeration Workflow
+
+```
+Open Website
+↓
+
+View Source Code
+
+↓
+
+Check robots.txt
+
+↓
+
+Inspect HTTP Headers
+
+↓
+
+Fingerprint Technologies
+
+↓
+
+Directory Enumeration
+
+↓
+
+Subdomain Enumeration
+
+↓
+
+Search for Vulnerabilities
+```
+
+---
+
+# Gobuster
+
+## Purpose
+
+Directory and File Brute Forcing.
+
+Used to discover hidden:
+
+- Directories
+- Files
+- Admin Panels
+- Backups
+- Upload Folders
+
+---
+
+## Directory Enumeration
+
+```bash
+gobuster dir -u http://IP -w /usr/share/seclists/Discovery/Web-Content/common.txt
+```
+
+### Options
+
+| Option | Meaning |
+|---------|----------|
+| `dir` | Directory enumeration mode |
+| `-u` | Target URL |
+| `-w` | Wordlist |
+
+---
+
+## Example Output
+
+```text
+/index.php     200
+/admin         403
+/wordpress     301
+```
+
+---
+
+# HTTP Status Codes
+
+| Code | Meaning |
+|------|----------|
+| 200 | OK (Resource exists) |
+| 301 | Permanent Redirect |
+| 302 | Temporary Redirect |
+| 403 | Forbidden (Exists but no access) |
+| 404 | Not Found |
+| 500 | Internal Server Error |
+
+---
+
+# DNS Subdomain Enumeration
+
+## Purpose
+
+Discover hidden subdomains.
+
+Examples
+
+- admin.example.com
+- vpn.example.com
+- api.example.com
+- blog.example.com
+
+---
+
+## Command
+
+```bash
+gobuster dns -d example.com -w /usr/share/seclists/Discovery/DNS/namelist.txt
+```
+
+### Options
+
+| Option | Meaning |
+|---------|----------|
+| `dns` | DNS enumeration mode |
+| `-d` | Domain |
+| `-w` | Wordlist |
+
+---
+
+# cURL
+
+## Purpose
+
+Retrieve HTTP response headers.
+
+Useful for Banner Grabbing.
+
+---
+
+## Command
+
+```bash
+curl -IL http://IP
+```
+
+### Options
+
+| Option | Meaning |
+|---------|----------|
+| `-I` | Show HTTP headers only |
+| `-L` | Follow redirects |
+
+---
+
+## Information You May Find
+
+- Web Server
+- Server Version
+- PHP Version
+- Framework
+- Authentication Methods
+
+---
+
+# WhatWeb
+
+## Purpose
+
+Fingerprint web technologies automatically.
+
+Detects:
+
+- Web Server
+- CMS
+- Programming Language
+- Framework
+- JavaScript Libraries
+
+---
+
+## Command
+
+```bash
+whatweb IP
+```
+
+---
+
+## Example Output
+
+```text
+Apache 2.4.41
+PHP 7.4
+WordPress
+Bootstrap
+```
+
+---
+
+# SSL/TLS Certificates
+
+HTTPS websites may reveal useful information inside their certificates.
+
+Possible Information
+
+- Company Name
+- Email Address
+- Organization
+- Subdomains
+
+---
+
+# robots.txt
+
+## Purpose
+
+Instruct search engines which pages should not be indexed.
+
+---
+
+## Check
+
+```text
+http://IP/robots.txt
+```
+
+---
+
+## Example
+
+```text
+Disallow: /admin
+Disallow: /private
+Disallow: /uploads
+```
+
+Hidden directories found here should always be investigated.
+
+---
+
+# Source Code
+
+Always inspect the HTML source.
+
+Shortcut
+
+```
+Ctrl + U
+```
+
+---
+
+## Look For
+
+- Comments
+- Hidden Links
+- Test Credentials
+- API Keys
+- JavaScript Files
+- Sensitive Information
+
+Example
+
+```html
+<!--
+username=test
+password=test123
+-->
+```
+
+---
+
+# Common Web Enumeration Checklist
+
+- Open the website
+- Check the page source
+- Read robots.txt
+- Inspect HTTP headers
+- Run WhatWeb
+- Run Gobuster
+- Enumerate subdomains
+- Identify technologies
+- Search for vulnerabilities
+
+---
+
+# Common Commands
+
+```bash
+gobuster dir -u http://IP -w WORDLIST
+```
+
+```bash
+gobuster dns -d DOMAIN -w WORDLIST
+```
+
+```bash
+curl -IL http://IP
+```
+
+```bash
+whatweb IP
+```
+
+---
+
+# What I Learned
+
+- Web Enumeration is one of the most important phases of a penetration test.
+- Hidden directories often expose sensitive functionality.
+- HTTP headers reveal valuable information about the target.
+- WhatWeb quickly fingerprints web technologies.
+- robots.txt and Source Code frequently expose useful information.
+- Always enumerate thoroughly before attempting exploitation.
 
 ### What I Learned
 
