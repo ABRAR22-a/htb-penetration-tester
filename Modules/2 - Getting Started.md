@@ -2385,3 +2385,383 @@ Privilege Escalation
 - Web Shell executes commands through HTTP requests.
 - Upgrade Netcat shells to a full TTY for better usability.
 - Shell access is usually the first step before Privilege Escalation.
+---
+# Privilege Escalation (PrivEsc)
+
+## Objective
+
+Privilege Escalation is the process of increasing permissions after gaining initial access to a system.
+
+The goal is to become:
+
+- **Linux:** `root`
+- **Windows:** `Administrator` or `SYSTEM`
+
+---
+
+# Typical Workflow
+
+```
+Recon
+    ↓
+Enumeration
+    ↓
+Exploitation
+    ↓
+Initial Shell
+    ↓
+Privilege Escalation
+    ↓
+Root / SYSTEM
+```
+
+---
+
+# Why is Privilege Escalation Needed?
+
+After exploiting a vulnerability, we usually obtain access as a low-privileged user.
+
+Example:
+
+```bash
+whoami
+```
+
+Output:
+
+```
+www-data
+```
+
+`www-data` is the Apache web server user and has very limited permissions.
+
+Examples:
+
+```bash
+cat /etc/shadow
+```
+
+```
+Permission denied
+```
+
+```bash
+cd /root
+```
+
+```
+Permission denied
+```
+
+The objective is to find a way to elevate privileges and become **root**.
+
+---
+
+# Enumeration Before Exploitation
+
+The first step after obtaining a shell is **Enumeration**.
+
+Do **not** immediately search for exploits.
+
+Instead, collect information about the target.
+
+Typical enumeration order:
+
+```bash
+whoami
+```
+
+```bash
+id
+```
+
+```bash
+uname -a
+```
+
+```bash
+cat /etc/os-release
+```
+
+```bash
+sudo -l
+```
+
+---
+
+# Enumeration Scripts
+
+Instead of running dozens of commands manually, automated enumeration tools can be used.
+
+Common tools:
+
+- LinPEAS (Linux)
+- WinPEAS (Windows)
+- Seatbelt (Windows)
+- JAWS (Windows)
+
+Example:
+
+```bash
+./linpeas.sh
+```
+
+These tools **do not exploit vulnerabilities**.
+
+They only search for potential privilege escalation opportunities.
+
+---
+
+# What Do Enumeration Tools Look For?
+
+## 1. Kernel Version
+
+Identify the operating system kernel.
+
+```bash
+uname -a
+```
+
+or
+
+```bash
+cat /etc/os-release
+```
+
+If the kernel is outdated, search for public privilege escalation exploits.
+
+Example:
+
+```
+DirtyCow
+```
+
+**Note**
+
+Kernel exploits can crash production systems and should be used carefully.
+
+---
+
+## 2. Installed Software
+
+Check installed applications.
+
+Example:
+
+```bash
+dpkg -l
+```
+
+Old software versions may contain privilege escalation vulnerabilities.
+
+---
+
+## 3. Sudo Privileges
+
+One of the most important checks.
+
+```bash
+sudo -l
+```
+
+This command shows which programs the current user can execute with sudo.
+
+Example:
+
+```
+(root) NOPASSWD: /usr/bin/vim
+```
+
+If a program appears here, check **GTFOBins** for privilege escalation techniques.
+
+---
+
+# GTFOBins
+
+GTFOBins documents legitimate Linux binaries that can be abused to gain elevated privileges.
+
+Workflow:
+
+```
+sudo -l
+      ↓
+Allowed Program
+      ↓
+Search GTFOBins
+      ↓
+Escape to Root Shell
+```
+
+Example:
+
+```
+sudo vim -c ':!/bin/bash'
+```
+
+---
+
+## 4. Scheduled Tasks (Cron Jobs)
+
+Cron automatically executes scripts.
+
+If a root-owned scheduled script is writable, it may be modified to execute malicious commands.
+
+Example:
+
+```
+backup.sh
+```
+
+If editable:
+
+```
+Reverse Shell
+```
+
+or
+
+```
+Privilege Escalation Payload
+```
+
+may execute as root.
+
+---
+
+## 5. Credentials
+
+Search configuration files for passwords.
+
+Examples:
+
+```bash
+cat config.php
+```
+
+Possible findings:
+
+- Database passwords
+- User passwords
+- API keys
+- Tokens
+
+Administrators often reuse passwords.
+
+---
+
+## 6. SSH Keys
+
+Search for SSH private keys.
+
+Examples:
+
+```
+~/.ssh/
+```
+
+or
+
+```
+/root/.ssh/
+```
+
+If a private key is found:
+
+```bash
+chmod 600 id_rsa
+```
+
+```bash
+ssh root@TARGET -i id_rsa
+```
+
+If write access is available, a new public key can be added to:
+
+```
+authorized_keys
+```
+
+to gain SSH access.
+
+---
+
+# Common Privilege Escalation Targets
+
+- Kernel vulnerabilities
+- Sudo misconfigurations
+- SUID binaries
+- Cron jobs
+- Weak permissions
+- Configuration files
+- Password reuse
+- SSH keys
+- Installed software vulnerabilities
+
+---
+
+# Recommended Enumeration Order
+
+```bash
+whoami
+```
+
+↓
+
+```bash
+id
+```
+
+↓
+
+```bash
+uname -a
+```
+
+↓
+
+```bash
+cat /etc/os-release
+```
+
+↓
+
+```bash
+sudo -l
+```
+
+↓
+
+Check:
+
+- SUID
+- Cron Jobs
+- Passwords
+- SSH Keys
+- Installed Software
+- Kernel Version
+
+---
+
+# Important Notes
+
+- Privilege Escalation is a **phase**, not a single exploit.
+- Enumeration is more important than immediately searching for exploits.
+- Automated tools help identify attack vectors but do not exploit them.
+- Always verify findings manually.
+- `sudo -l` is one of the first commands to run after obtaining a shell.
+
+---
+
+# Key Takeaways
+
+- Initial access usually provides a low-privileged shell.
+- The goal is to become **root** (Linux) or **Administrator/SYSTEM** (Windows).
+- Enumeration is the foundation of privilege escalation.
+- Always check:
+  - Kernel version
+  - Installed software
+  - `sudo -l`
+  - Cron jobs
+  - Credentials
+  - SSH keys
+- Use GTFOBins whenever `sudo -l` allows execution of Linux binaries.
